@@ -26,4 +26,14 @@ class ProductRepositoryTest {
     void shouldReturnAllProducts() {
         assertThat(productRepository.findAll()).hasSize(15);
     }
+
+    @Test
+    void shouldReturnProductByCode_WhenValidCode() {
+        assertThat(productRepository.findByCode("P114").isPresent()).isTrue();
+    }
+
+    @Test
+    void shouldReturnEmpty_WhenInvalidCode() {
+        assertThat(productRepository.findByCode("invalid-code").isEmpty()).isTrue();
+    }
 }

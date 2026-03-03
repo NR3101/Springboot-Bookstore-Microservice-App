@@ -1,7 +1,7 @@
 package com.neeraj.catalogservice.domain;
 
 public class ProductMapper {
-    public static Product ToProduct(ProductEntity productEntity) {
+    public static Product toProduct(ProductEntity productEntity) {
         return new Product(
                 productEntity.getCode(),
                 productEntity.getName(),

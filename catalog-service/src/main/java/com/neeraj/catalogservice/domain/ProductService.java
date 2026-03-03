@@ -1,6 +1,7 @@
 package com.neeraj.catalogservice.domain;
 
 import com.neeraj.catalogservice.ApplicationProperties;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.data.domain.Page;
@@ -24,7 +25,7 @@ public class ProductService {
         pageNo = pageNo <= 1 ? 0 : pageNo - 1;
         Pageable pageable = PageRequest.of(pageNo, applicationProperties.pageSize(), sort);
 
-        Page<Product> productsPage = productRepository.findAll(pageable).map(ProductMapper::ToProduct);
+        Page<Product> productsPage = productRepository.findAll(pageable).map(ProductMapper::toProduct);
         return new PagedResult<>(
                 productsPage.getContent(),
                 productsPage.getTotalElements(),
@@ -34,5 +35,9 @@ public class ProductService {
                 productsPage.isLast(),
                 productsPage.hasNext(),
                 productsPage.hasPrevious());
+    }
+
+    public Optional<Product> getProductByCode(String code) {
+        return productRepository.findByCode(code).map(ProductMapper::toProduct);
     }
 }

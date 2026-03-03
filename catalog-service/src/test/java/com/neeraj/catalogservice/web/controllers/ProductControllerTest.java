@@ -1,10 +1,13 @@
 package com.neeraj.catalogservice.web.controllers;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 import com.neeraj.catalogservice.AbstractIT;
+import com.neeraj.catalogservice.domain.Product;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.jdbc.Sql;
 
@@ -18,7 +21,7 @@ class ProductControllerTest extends AbstractIT {
 
     @Test
     void shouldReturnAllProducts() {
-        given().contentType("application/json")
+        given().contentType(ContentType.JSON)
                 .when()
                 .get("/api/products")
                 .then()
@@ -31,5 +34,31 @@ class ProductControllerTest extends AbstractIT {
                 .body("isLast", is(false))
                 .body("hasNext", is(true))
                 .body("hasPrevious", is(false));
+    }
+
+    @Test
+    void shouldReturnProductByCode_WhenValidCode() {
+        Product product = given().contentType(ContentType.JSON)
+                .when()
+                .get("/api/products/{code}", "P114")
+                .then()
+                .statusCode(200)
+                .assertThat()
+                .extract()
+                .body()
+                .as(Product.class);
+
+        assertThat(product).isNotNull();
+    }
+
+    @Test
+    void shouldReturnNotFound_WhenInvalidCode() {
+        given().contentType(ContentType.JSON)
+                .when()
+                .get("/api/products/{code}", "invalid-code")
+                .then()
+                .statusCode(404)
+                .body("status", is(404))
+                .body("title", is("Product Not Found"));
     }
 }
