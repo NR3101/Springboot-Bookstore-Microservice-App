@@ -28,6 +28,7 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <dockerImageName>neeraj310100/bookstore-${project.artifactId}</dockerImageName>
     </properties>
     <dependencies>
         <dependency>
@@ -159,7 +160,11 @@
                         </goals>
                     </execution>
                 </executions>
+                <!-- Build Docker Image using Spring Boot Maven Plugin -->
                 <configuration>
+                    <image>
+                        <name>${dockerImageName}</name>
+                    </image>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -174,12 +179,12 @@
                 <version>2.44.5</version>
                 <configuration>
                     <java>
-                        <importOrder />
-                        <removeUnusedImports />
+                        <importOrder/>
+                        <removeUnusedImports/>
                         <palantirJavaFormat>
                             <version>2.74.0</version>
                         </palantirJavaFormat>
-                        <formatAnnotations />
+                        <formatAnnotations/>
                     </java>
                 </configuration>
                 <executions>
