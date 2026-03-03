@@ -1,0 +1,10 @@
+create sequence products_id_seq start with 1 increment by 50;
+
+create table products (
+    id bigint primary key default nextval('products_id_seq'),
+    code text not null unique,
+    name text not null,
+    description text,
+    image_url text,
+    price numeric not null
+);
