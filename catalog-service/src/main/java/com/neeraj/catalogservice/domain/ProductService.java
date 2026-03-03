@@ -24,9 +24,7 @@ public class ProductService {
         pageNo = pageNo <= 1 ? 0 : pageNo - 1;
         Pageable pageable = PageRequest.of(pageNo, applicationProperties.pageSize(), sort);
 
-        Page<Product> productsPage = productRepository
-                .findAll(pageable)
-                .map(ProductMapper::ToProduct);
+        Page<Product> productsPage = productRepository.findAll(pageable).map(ProductMapper::ToProduct);
         return new PagedResult<>(
                 productsPage.getContent(),
                 productsPage.getTotalElements(),
