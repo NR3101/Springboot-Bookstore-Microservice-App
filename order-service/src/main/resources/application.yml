@@ -17,6 +17,7 @@ spring:
 
 #    Order Events configuration for RabbitMQ
 orders:
+  catalog-service-url: http://localhost:8081
   order-events-exchange: orders-exchange
   new-orders-queue: new-orders
   delivered-orders-queue: delivered-orders

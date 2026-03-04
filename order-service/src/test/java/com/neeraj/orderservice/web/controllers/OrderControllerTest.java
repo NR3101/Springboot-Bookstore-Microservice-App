@@ -23,36 +23,36 @@ class OrderControllerTest extends AbstractIT {
         void shouldCreateOrderSuccessfully() {
             var payload =
                     """
-                        {
-                            "customer": {
-                                "name": "John Doe",
-                                "email": "john.doe@example.com",
-                                "phone": "1234567890"
-                            },
-                            "deliveryAddress": {
-                                "addressLine1": "123 Main St",
-                                "addressLine2": "Apt 4B",
-                                "city": "Anytown",
-                                "state": "CA",
-                                "zipCode": "12345",
-                                "country": "USA"
-                            },
-                            "items": [
                                 {
-                                    "code": "ABC123",
-                                    "name": "Product A",
-                                    "quantity": 2,
-                                    "price": 10.99
-                                },
-                                {
-                                    "code": "XYZ789",
-                                    "name": "Product B",
-                                    "quantity": 1,
-                                    "price": 5.99
+                                    "customer": {
+                                        "name": "John Doe",
+                                        "email": "john.doe@example.com",
+                                        "phone": "1234567890"
+                                    },
+                                    "deliveryAddress": {
+                                        "addressLine1": "123 Main St",
+                                        "addressLine2": "Apt 4B",
+                                        "city": "Anytown",
+                                        "state": "CA",
+                                        "zipCode": "12345",
+                                        "country": "USA"
+                                    },
+                                    "items": [
+                                        {
+                                            "code": "P100",
+                                            "name": "Product A",
+                                            "quantity": 2,
+                                            "price": 34
+                                        },
+                                        {
+                                            "code": "P104",
+                                            "name": "Product B",
+                                            "quantity": 1,
+                                            "price": 14.5
+                                        }
+                                    ]
                                 }
-                            ]
-                        }
-                    """;
+                            """;
 
             given().contentType(ContentType.JSON)
                     .body(payload)
