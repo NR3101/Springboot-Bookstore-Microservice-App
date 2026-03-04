@@ -3,7 +3,7 @@ create sequence order_item_id_seq start with 1 increment by 50;
 
 create table orders
 (
-    id                        bigint primary key       default nextval('order_id_seq'),
+    id                        bigint primary key default nextval('order_id_seq'),
     order_number              text not null unique,
     username                  text not null,
     customer_name             text not null,
@@ -17,8 +17,8 @@ create table orders
     delivery_address_country  text not null,
     status                    text not null,
     comments                  text,
-    created_at                timestamp with time zone default now(),
-    updated_at                timestamp with time zone default now()
+    created_at                timestamp,
+    updated_at                timestamp
 );
 
 create table order_items

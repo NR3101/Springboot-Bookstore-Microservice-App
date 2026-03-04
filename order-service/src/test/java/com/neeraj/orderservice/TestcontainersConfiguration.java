@@ -21,5 +21,4 @@ class TestcontainersConfiguration {
     RabbitMQContainer rabbitContainer() {
         return new RabbitMQContainer(DockerImageName.parse("rabbitmq:latest"));
     }
-
 }
