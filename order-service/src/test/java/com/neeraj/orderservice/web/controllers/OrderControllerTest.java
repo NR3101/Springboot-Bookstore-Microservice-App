@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import com.neeraj.orderservice.AbstractIT;
 import com.neeraj.orderservice.testdata.TestDataFactory;
 import io.restassured.http.ContentType;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,9 @@ class OrderControllerTest extends AbstractIT {
 
         @Test
         void shouldCreateOrderSuccessfully() {
+            mockGetProductByCode("P100", "Product A", BigDecimal.valueOf(34));
+            mockGetProductByCode("P104", "Product B", BigDecimal.valueOf(14.5));
+
             var payload =
                     """
                                 {
