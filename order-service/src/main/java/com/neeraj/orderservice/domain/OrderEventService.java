@@ -2,8 +2,7 @@ package com.neeraj.orderservice.domain;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.neeraj.orderservice.domain.models.OrderCreatedEvent;
-import com.neeraj.orderservice.domain.models.OrderEventType;
+import com.neeraj.orderservice.domain.models.*;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -25,6 +24,42 @@ public class OrderEventService {
         OrderEventEntity orderEvent = OrderEventEntity.builder()
                 .eventId(event.eventId())
                 .eventType(OrderEventType.ORDER_CREATED)
+                .orderNumber(event.orderNumber())
+                .createdAt(event.createdAt())
+                .payload(toJsonPayload(event))
+                .build();
+
+        orderEventRepository.save(orderEvent);
+    }
+
+    void save(OrderDeliveredEvent event) {
+        OrderEventEntity orderEvent = OrderEventEntity.builder()
+                .eventId(event.eventId())
+                .eventType(OrderEventType.ORDER_DELIVERED)
+                .orderNumber(event.orderNumber())
+                .createdAt(event.createdAt())
+                .payload(toJsonPayload(event))
+                .build();
+
+        orderEventRepository.save(orderEvent);
+    }
+
+    void save(OrderCancelledEvent event) {
+        OrderEventEntity orderEvent = OrderEventEntity.builder()
+                .eventId(event.eventId())
+                .eventType(OrderEventType.ORDER_CANCELLED)
+                .orderNumber(event.orderNumber())
+                .createdAt(event.createdAt())
+                .payload(toJsonPayload(event))
+                .build();
+
+        orderEventRepository.save(orderEvent);
+    }
+
+    void save(OrderErrorEvent event) {
+        OrderEventEntity orderEvent = OrderEventEntity.builder()
+                .eventId(event.eventId())
+                .eventType(OrderEventType.ORDER_PROCESSING_FAILED)
                 .orderNumber(event.orderNumber())
                 .createdAt(event.createdAt())
                 .payload(toJsonPayload(event))
@@ -55,6 +90,32 @@ public class OrderEventService {
                         event.getOrderNumber());
                 OrderCreatedEvent orderCreatedEvent = fromJsonPayload(event.getPayload(), OrderCreatedEvent.class);
                 orderEventPublisher.publish(orderCreatedEvent);
+            }
+            case ORDER_DELIVERED -> {
+                log.info(
+                        "Publishing ORDER_DELIVERED event with id: {} for order number: {}",
+                        event.getEventId(),
+                        event.getOrderNumber());
+                OrderDeliveredEvent orderDeliveredEvent =
+                        fromJsonPayload(event.getPayload(), OrderDeliveredEvent.class);
+                orderEventPublisher.publish(orderDeliveredEvent);
+            }
+            case ORDER_CANCELLED -> {
+                log.info(
+                        "Publishing ORDER_CANCELLED event with id: {} for order number: {}",
+                        event.getEventId(),
+                        event.getOrderNumber());
+                OrderCancelledEvent orderCancelledEvent =
+                        fromJsonPayload(event.getPayload(), OrderCancelledEvent.class);
+                orderEventPublisher.publish(orderCancelledEvent);
+            }
+            case ORDER_PROCESSING_FAILED -> {
+                log.info(
+                        "Publishing ORDER_PROCESSING_FAILED event with id: {} for order number: {}",
+                        event.getEventId(),
+                        event.getOrderNumber());
+                OrderErrorEvent orderErrorEvent = fromJsonPayload(event.getPayload(), OrderErrorEvent.class);
+                orderEventPublisher.publish(orderErrorEvent);
             }
             default -> log.warn("Unknown event type: {} for event id: {}", eventType, event.getEventId());
         }
