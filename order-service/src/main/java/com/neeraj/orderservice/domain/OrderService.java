@@ -2,6 +2,7 @@ package com.neeraj.orderservice.domain;
 
 import com.neeraj.orderservice.domain.models.CreateOrderRequest;
 import com.neeraj.orderservice.domain.models.CreateOrderResponse;
+import com.neeraj.orderservice.domain.models.OrderCreatedEvent;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -16,6 +17,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderValidator orderValidator;
+    private final OrderEventService orderEventService;
 
     public CreateOrderResponse createOrder(String userName, @Valid CreateOrderRequest request) {
         orderValidator.validate(request);
@@ -24,6 +26,9 @@ public class OrderService {
         newOrder.setUserName(userName);
         OrderEntity savedOrder = orderRepository.save(newOrder);
         log.info("Saved order for user: {} with order number: {}", userName, savedOrder.getOrderNumber());
+
+        OrderCreatedEvent event = OrderEventMapper.buildOrderCreatedEvent(savedOrder);
+        orderEventService.save(event);
         return new CreateOrderResponse(savedOrder.getOrderNumber());
     }
 }

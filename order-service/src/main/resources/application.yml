@@ -23,6 +23,7 @@ orders:
   delivered-orders-queue: delivered-orders
   cancelled-orders-queue: cancelled-orders
   error-orders-queue: error-orders
+  publish-order-events-job-cron: "*/5 * * * * *"
 
 # Resilience4j configuration
 resilience4j:
