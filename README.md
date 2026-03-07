@@ -8,22 +8,50 @@ A Spring Boot-based microservice application for managing a bookstore, built wit
 
 ## Modules
 
-| Module            | Port | Description                        | Status         |
-|-------------------|------|------------------------------------|----------------|
-| `catalog-service` | 8081 | Manages book catalog and inventory | 🚧 In Progress |
+| Module            | Port | Description                                       | Status         |
+|-------------------|------|---------------------------------------------------|----------------|
+| `catalog-service` | 8081 | Manages book catalog and inventory                | 🚧 In Progress |
+| `order-service`   | 8082 | Handles order creation, processing, and events    | 🚧 In Progress |
 
 ---
 
 ## Tech Stack
 
+### Core
 - **Java 21**
 - **Spring Boot 3.x**
 - **Spring Data JPA** with PostgreSQL
 - **Flyway** – Database migrations
-- **Spring Boot Actuator** – Health & info endpoints
-- **Testcontainers** – Integration testing with real PostgreSQL
+- **Lombok** – Boilerplate reduction
+- **Spring Boot Actuator** – Health, info & metrics endpoints
+- **SpringDoc OpenAPI (Swagger UI)** – API documentation
+
+### Messaging
+- **RabbitMQ** – Async event messaging between services
+- **Spring AMQP** – RabbitMQ integration
+
+### Resilience
+- **Resilience4j** – Retry and Circuit Breaker for inter-service HTTP calls
+- **ShedLock** – Distributed scheduled job locking (prevents duplicate execution across multiple instances)
+
+### Patterns
+- **Outbox Pattern** – Reliable event publishing via a transactional outbox table
+
+### Testing
+- **Testcontainers** – Integration testing with real PostgreSQL and RabbitMQ containers
+- **WireMock** (via Testcontainers) – Mocking external HTTP services in integration tests
+- **REST Assured** – API-level integration testing
+- **Instancio** – Test data generation
+- **JUnit 5** – Test framework
+
+### Observability
+- **Micrometer + Prometheus** – Metrics collection
+
+### Build & Tooling
 - **Spotless** – Code formatting (Palantir Java Format)
 - **Docker Compose** – Local infrastructure
+- **GitHub Actions** – CI/CD pipeline per service
+- **git-commit-id-maven-plugin** – Exposes git info via Actuator `/info` endpoint
 
 ---
 
@@ -39,6 +67,8 @@ A Spring Boot-based microservice application for managing a bookstore, built wit
 
 ### 1. Start Infrastructure
 
+Starts PostgreSQL (catalog & order databases) and RabbitMQ:
+
 ```bash
 docker compose -f deployment/docker-compose/infra.yml up -d
 ```
@@ -52,33 +82,64 @@ docker compose -f deployment/docker-compose/infra.yml up -d
 ### 3. Run a Service
 
 ```bash
+# Catalog Service
 cd catalog-service
+./mvnw spring-boot:run
+
+# Order Service
+cd order-service
 ./mvnw spring-boot:run
 ```
 
-`catalog-service` will be available at: `http://localhost:8081`
+| Service           | URL                        |
+|-------------------|----------------------------|
+| `catalog-service` | `http://localhost:8081`    |
+| `order-service`   | `http://localhost:8082`    |
+| RabbitMQ UI       | `http://localhost:15672`   |
+
+---
+
+## API Documentation (Swagger UI)
+
+| Service           | Swagger UI URL                              |
+|-------------------|---------------------------------------------|
+| `catalog-service` | `http://localhost:8081/swagger-ui/index.html` |
+| `order-service`   | `http://localhost:8082/swagger-ui/index.html` |
 
 ---
 
 ## Configuration
 
-Services use environment variables with sensible defaults for local development:
+Services use environment variables with sensible defaults for local development.
 
 ### catalog-service
 
-| Variable      | Default                                        | Description         |
-|---------------|------------------------------------------------|---------------------|
-| `DB_URL`      | `jdbc:postgresql://localhost:15432/catalog_db` | PostgreSQL JDBC URL |
-| `DB_USERNAME` | `postgres`                                     | DB username         |
-| `DB_PASSWORD` | `password`                                     | DB password         |
+| Variable      | Default                                        | Description           |
+|---------------|------------------------------------------------|-----------------------|
+| `DB_URL`      | `jdbc:postgresql://localhost:15432/catalog_db` | PostgreSQL JDBC URL   |
+| `DB_USERNAME` | `postgres`                                     | DB username           |
+| `DB_PASSWORD` | `password`                                     | DB password           |
+
+### order-service
+
+| Variable              | Default                                        | Description                        |
+|-----------------------|------------------------------------------------|------------------------------------|
+| `DB_URL`              | `jdbc:postgresql://localhost:25432/order_db`   | PostgreSQL JDBC URL                |
+| `DB_USERNAME`         | `postgres`                                     | DB username                        |
+| `DB_PASSWORD`         | `password`                                     | DB password                        |
+| `RABBITMQ_HOST`       | `localhost`                                    | RabbitMQ host                      |
+| `RABBITMQ_PORT`       | `5672`                                         | RabbitMQ AMQP port                 |
+| `RABBITMQ_USERNAME`   | `guest`                                        | RabbitMQ username                  |
+| `RABBITMQ_PASSWORD`   | `guest`                                        | RabbitMQ password                  |
 
 ---
 
 ## Actuator Endpoints
 
-| Service           | Health                               | Info                               |
-|-------------------|--------------------------------------|------------------------------------|
-| `catalog-service` | `GET localhost:8081/actuator/health` | `GET localhost:8081/actuator/info` |
+| Service           | Health                                 | Info                                 |
+|-------------------|----------------------------------------|--------------------------------------|
+| `catalog-service` | `GET localhost:8081/actuator/health`   | `GET localhost:8081/actuator/info`   |
+| `order-service`   | `GET localhost:8082/actuator/health`   | `GET localhost:8082/actuator/info`   |
 
 ---
 
@@ -90,6 +151,7 @@ Services use environment variables with sensible defaults for local development:
 
 # Run tests for a specific module
 cd catalog-service && ./mvnw test
+cd order-service && ./mvnw test
 ```
 
 > Tests use Testcontainers and require Docker to be running.
@@ -108,14 +170,63 @@ Auto-format all modules before committing:
 
 ---
 
+## CI/CD
+
+Each service has its own GitHub Actions workflow that triggers on pushes to `main` affecting that service's directory:
+
+| Workflow          | Trigger Path       | Actions                                      |
+|-------------------|--------------------|----------------------------------------------|
+| `catalog-service` | `catalog-service/**` | Build → Test → Build & Push Docker Image   |
+| `order-service`   | `order-service/**`   | Build → Test → Build & Push Docker Image   |
+
+Docker images are published to Docker Hub under `neeraj310100/bookstore-<service-name>`.
+
+Required GitHub Secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
+
+---
+
 ## Project Structure
 
 ```
 bookstore-microservice-app/
-├── catalog-service/          # Book catalog microservice
+├── .github/
+│   └── workflows/
+│       ├── catalog-service.yml   # CI/CD for catalog-service
+│       └── order-service.yml     # CI/CD for order-service
+├── catalog-service/              # Book catalog microservice
+│   ├── src/
+│   │   ├── main/java/            # Domain, service, controller, exception handler
+│   │   └── test/java/            # Integration tests (Testcontainers + REST Assured)
+│   └── pom.xml
+├── order-service/                # Order management microservice
+│   ├── src/
+│   │   ├── main/java/
+│   │   │   ├── clients/          # Catalog service HTTP client (Resilience4j)
+│   │   │   ├── config/           # RabbitMQ & ShedLock scheduler config
+│   │   │   ├── domain/           # Entities, services, repositories, outbox events
+│   │   │   ├── jobs/             # Scheduled jobs (event publishing, order processing)
+│   │   │   └── web/              # REST controllers & global exception handler
+│   │   └── test/java/            # Integration tests (Testcontainers + WireMock + REST Assured)
+│   └── pom.xml
 ├── deployment/
 │   └── docker-compose/
-│       └── infra.yml         # Local infrastructure (databases, etc.)
-├── pom.xml                   # Parent POM (multi-module)
+│       ├── infra.yml             # Local infrastructure (PostgreSQL x2, RabbitMQ)
+│       └── apps.yml              # Application services (catalog-service, order-service)
+├── docs/
+│   └── outbox-pattern.md         # Documentation on the Outbox Pattern implementation
+├── pom.xml                       # Parent POM (multi-module)
 └── README.md
 ```
+
+---
+
+## Key Design Decisions
+
+### Outbox Pattern
+Order events (created, delivered, cancelled, error) are first written to an `order_events` table within the same transaction as the order. A separate scheduled job (`OrderEventsPublishingJob`) then picks them up and publishes them to RabbitMQ. This guarantees no events are lost even if RabbitMQ is temporarily unavailable.
+
+### ShedLock for Distributed Scheduling
+Both scheduled jobs (`OrderEventsPublishingJob` and `OrderProcessingJob`) are protected with ShedLock. This ensures that in a multi-instance deployment, only one instance executes the job at a time, preventing duplicate event publishing or duplicate order processing.
+
+### Resilience4j for Inter-Service Communication
+The `order-service` communicates with `catalog-service` via HTTP to validate products at order creation time. Resilience4j provides **retry** (2 attempts, 300ms wait) and **circuit breaker** (COUNT_BASED, 50% failure threshold) to handle catalog-service downtime gracefully, with a fallback returning an empty result.

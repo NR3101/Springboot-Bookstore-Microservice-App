@@ -1,10 +1,53 @@
-HELP.md
+# ========================
+# Compiled Output & Build
+# ========================
 target/
+build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+
+# Keep Maven wrapper jar excluded
 .mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+!.mvn/jvm.config
+
 !**/src/main/**/target/
 !**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-### STS ###
+# ========================
+# Logs
+# ========================
+*.log
+logs/
+
+# ========================
+# Environment & Secrets
+# ========================
+.env
+.env.*
+!.env.example
+*.secret
+application-local.yml
+application-local.properties
+application-secret.yml
+application-secret.properties
+
+# ========================
+# IntelliJ IDEA
+# ========================
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# ========================
+# Eclipse / STS
+# ========================
 .apt_generated
 .classpath
 .factorypath
@@ -13,21 +56,34 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
+# ========================
+# NetBeans
+# ========================
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+# ========================
+# VS Code
+# ========================
 .vscode/
+
+# ========================
+# macOS
+# ========================
+.DS_Store
+._*
+
+# ========================
+# Linux
+# ========================
+*~
+
+# ========================
+# Misc
+# ========================
+HELP.md
+*.orig
+*.rej
