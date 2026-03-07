@@ -8,10 +8,11 @@ A Spring Boot-based microservice application for managing a bookstore, built wit
 
 ## Modules
 
-| Module            | Port | Description                                       | Status         |
-|-------------------|------|---------------------------------------------------|----------------|
-| `catalog-service` | 8081 | Manages book catalog and inventory                | 🚧 In Progress |
-| `order-service`   | 8082 | Handles order creation, processing, and events    | 🚧 In Progress |
+| Module                 | Port | Description                                         | Status |
+|------------------------|------|-----------------------------------------------------|--------|
+| `catalog-service`      | 8081 | Manages book catalog and inventory                  | Done   |
+| `order-service`        | 8082 | Handles order creation, processing, and events      | Done   |
+| `notification-service` | 8083 | Sends email notifications for order lifecycle events | Done   |
 
 ---
 
@@ -36,6 +37,11 @@ A Spring Boot-based microservice application for managing a bookstore, built wit
 
 ### Patterns
 - **Outbox Pattern** – Reliable event publishing via a transactional outbox table
+- **Idempotent Consumer** – Notification service deduplicates events using a processed event store
+
+### Notifications
+- **Spring Mail** – Email sending via JavaMailSender
+- **MailHog** – Local SMTP server for capturing and inspecting emails during development
 
 ### Testing
 - **Testcontainers** – Integration testing with real PostgreSQL and RabbitMQ containers
@@ -67,7 +73,7 @@ A Spring Boot-based microservice application for managing a bookstore, built wit
 
 ### 1. Start Infrastructure
 
-Starts PostgreSQL (catalog & order databases) and RabbitMQ:
+Starts PostgreSQL (catalog, order & notification databases), RabbitMQ, and MailHog:
 
 ```bash
 docker compose -f deployment/docker-compose/infra.yml up -d
@@ -83,28 +89,32 @@ docker compose -f deployment/docker-compose/infra.yml up -d
 
 ```bash
 # Catalog Service
-cd catalog-service
-./mvnw spring-boot:run
+cd catalog-service && ./mvnw spring-boot:run
 
 # Order Service
-cd order-service
-./mvnw spring-boot:run
+cd order-service && ./mvnw spring-boot:run
+
+# Notification Service
+cd notification-service && ./mvnw spring-boot:run
 ```
 
-| Service           | URL                        |
-|-------------------|----------------------------|
-| `catalog-service` | `http://localhost:8081`    |
-| `order-service`   | `http://localhost:8082`    |
-| RabbitMQ UI       | `http://localhost:15672`   |
+| Service                | URL                          |
+|------------------------|------------------------------|
+| `catalog-service`      | `http://localhost:8081`      |
+| `order-service`        | `http://localhost:8082`      |
+| `notification-service` | `http://localhost:8083`      |
+| RabbitMQ UI            | `http://localhost:15672`     |
+| MailHog UI             | `http://localhost:8025`      |
 
 ---
 
 ## API Documentation (Swagger UI)
 
-| Service           | Swagger UI URL                              |
-|-------------------|---------------------------------------------|
-| `catalog-service` | `http://localhost:8081/swagger-ui/index.html` |
-| `order-service`   | `http://localhost:8082/swagger-ui/index.html` |
+| Service                | Swagger UI URL                                  |
+|------------------------|-------------------------------------------------|
+| `catalog-service`      | `http://localhost:8081/swagger-ui/index.html`   |
+| `order-service`        | `http://localhost:8082/swagger-ui/index.html`   |
+| `notification-service` | `http://localhost:8083/swagger-ui/index.html`   |
 
 ---
 
@@ -114,32 +124,49 @@ Services use environment variables with sensible defaults for local development.
 
 ### catalog-service
 
-| Variable      | Default                                        | Description           |
-|---------------|------------------------------------------------|-----------------------|
-| `DB_URL`      | `jdbc:postgresql://localhost:15432/catalog_db` | PostgreSQL JDBC URL   |
-| `DB_USERNAME` | `postgres`                                     | DB username           |
-| `DB_PASSWORD` | `password`                                     | DB password           |
+| Variable      | Default                                        | Description         |
+|---------------|------------------------------------------------|---------------------|
+| `DB_URL`      | `jdbc:postgresql://localhost:15432/catalog_db` | PostgreSQL JDBC URL |
+| `DB_USERNAME` | `postgres`                                     | DB username         |
+| `DB_PASSWORD` | `password`                                     | DB password         |
 
 ### order-service
 
-| Variable              | Default                                        | Description                        |
-|-----------------------|------------------------------------------------|------------------------------------|
-| `DB_URL`              | `jdbc:postgresql://localhost:25432/order_db`   | PostgreSQL JDBC URL                |
-| `DB_USERNAME`         | `postgres`                                     | DB username                        |
-| `DB_PASSWORD`         | `password`                                     | DB password                        |
-| `RABBITMQ_HOST`       | `localhost`                                    | RabbitMQ host                      |
-| `RABBITMQ_PORT`       | `5672`                                         | RabbitMQ AMQP port                 |
-| `RABBITMQ_USERNAME`   | `guest`                                        | RabbitMQ username                  |
-| `RABBITMQ_PASSWORD`   | `guest`                                        | RabbitMQ password                  |
+| Variable            | Default                                      | Description         |
+|---------------------|----------------------------------------------|---------------------|
+| `DB_URL`            | `jdbc:postgresql://localhost:25432/order_db` | PostgreSQL JDBC URL |
+| `DB_USERNAME`       | `postgres`                                   | DB username         |
+| `DB_PASSWORD`       | `password`                                   | DB password         |
+| `RABBITMQ_HOST`     | `localhost`                                  | RabbitMQ host       |
+| `RABBITMQ_PORT`     | `5672`                                       | RabbitMQ AMQP port  |
+| `RABBITMQ_USERNAME` | `guest`                                      | RabbitMQ username   |
+| `RABBITMQ_PASSWORD` | `guest`                                      | RabbitMQ password   |
+
+### notification-service
+
+| Variable            | Default                                              | Description                      |
+|---------------------|------------------------------------------------------|----------------------------------|
+| `DB_URL`            | `jdbc:postgresql://localhost:35432/notification_db`  | PostgreSQL JDBC URL              |
+| `DB_USERNAME`       | `postgres`                                           | DB username                      |
+| `DB_PASSWORD`       | `password`                                           | DB password                      |
+| `RABBITMQ_HOST`     | `localhost`                                          | RabbitMQ host                    |
+| `RABBITMQ_PORT`     | `5672`                                               | RabbitMQ AMQP port               |
+| `RABBITMQ_USERNAME` | `guest`                                              | RabbitMQ username                |
+| `RABBITMQ_PASSWORD` | `guest`                                              | RabbitMQ password                |
+| `MAIL_HOST`         | `127.0.0.1`                                          | SMTP host (MailHog locally)      |
+| `MAIL_PORT`         | `1025`                                               | SMTP port                        |
+| `MAIL_USERNAME`     | `PLACEHOLDER`                                        | SMTP username                    |
+| `MAIL_PASSWORD`     | `PLACEHOLDER`                                        | SMTP password                    |
 
 ---
 
 ## Actuator Endpoints
 
-| Service           | Health                                 | Info                                 |
-|-------------------|----------------------------------------|--------------------------------------|
-| `catalog-service` | `GET localhost:8081/actuator/health`   | `GET localhost:8081/actuator/info`   |
-| `order-service`   | `GET localhost:8082/actuator/health`   | `GET localhost:8082/actuator/info`   |
+| Service                | Health                                  | Info                                  |
+|------------------------|-----------------------------------------|---------------------------------------|
+| `catalog-service`      | `GET localhost:8081/actuator/health`    | `GET localhost:8081/actuator/info`    |
+| `order-service`        | `GET localhost:8082/actuator/health`    | `GET localhost:8082/actuator/info`    |
+| `notification-service` | `GET localhost:8083/actuator/health`    | `GET localhost:8083/actuator/info`    |
 
 ---
 
@@ -152,6 +179,7 @@ Services use environment variables with sensible defaults for local development.
 # Run tests for a specific module
 cd catalog-service && ./mvnw test
 cd order-service && ./mvnw test
+cd notification-service && ./mvnw test
 ```
 
 > Tests use Testcontainers and require Docker to be running.
@@ -174,10 +202,11 @@ Auto-format all modules before committing:
 
 Each service has its own GitHub Actions workflow that triggers on pushes to `main` affecting that service's directory:
 
-| Workflow          | Trigger Path       | Actions                                      |
-|-------------------|--------------------|----------------------------------------------|
-| `catalog-service` | `catalog-service/**` | Build → Test → Build & Push Docker Image   |
-| `order-service`   | `order-service/**`   | Build → Test → Build & Push Docker Image   |
+| Workflow               | Trigger Path              | Actions                                    |
+|------------------------|---------------------------|--------------------------------------------|
+| `catalog-service`      | `catalog-service/**`      | Build → Test → Build & Push Docker Image   |
+| `order-service`        | `order-service/**`        | Build → Test → Build & Push Docker Image   |
+| `notification-service` | `notification-service/**` | Build → Test → Build & Push Docker Image   |
 
 Docker images are published to Docker Hub under `neeraj310100/bookstore-<service-name>`.
 
@@ -191,30 +220,37 @@ Required GitHub Secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
 bookstore-microservice-app/
 ├── .github/
 │   └── workflows/
-│       ├── catalog-service.yml   # CI/CD for catalog-service
-│       └── order-service.yml     # CI/CD for order-service
-├── catalog-service/              # Book catalog microservice
+│       ├── catalog-service.yml       # CI/CD for catalog-service
+│       ├── order-service.yml         # CI/CD for order-service
+│       └── notification-service.yml  # CI/CD for notification-service
+├── catalog-service/                  # Book catalog microservice
 │   ├── src/
-│   │   ├── main/java/            # Domain, service, controller, exception handler
-│   │   └── test/java/            # Integration tests (Testcontainers + REST Assured)
+│   │   ├── main/java/                # Domain, service, controller, exception handler
+│   │   └── test/java/                # Integration tests (Testcontainers + REST Assured)
 │   └── pom.xml
-├── order-service/                # Order management microservice
+├── order-service/                    # Order management microservice
 │   ├── src/
 │   │   ├── main/java/
-│   │   │   ├── clients/          # Catalog service HTTP client (Resilience4j)
-│   │   │   ├── config/           # RabbitMQ & ShedLock scheduler config
-│   │   │   ├── domain/           # Entities, services, repositories, outbox events
-│   │   │   ├── jobs/             # Scheduled jobs (event publishing, order processing)
-│   │   │   └── web/              # REST controllers & global exception handler
-│   │   └── test/java/            # Integration tests (Testcontainers + WireMock + REST Assured)
+│   │   │   ├── clients/              # Catalog service HTTP client (Resilience4j)
+│   │   │   ├── config/               # RabbitMQ & ShedLock scheduler config
+│   │   │   ├── domain/               # Entities, services, repositories, outbox events
+│   │   │   ├── jobs/                 # Scheduled jobs (event publishing, order processing)
+│   │   │   └── web/                  # REST controllers & global exception handler
+│   │   └── test/java/                # Integration tests (Testcontainers + WireMock + REST Assured)
+│   └── pom.xml
+├── notification-service/             # Email notification microservice
+│   ├── src/
+│   │   ├── main/java/
+│   │   │   ├── config/               # RabbitMQ config (listener container factory)
+│   │   │   ├── domain/               # NotificationService, event entity & repository
+│   │   │   └── events/               # RabbitMQ listener handlers per event type
+│   │   └── test/java/                # Integration tests (Testcontainers)
 │   └── pom.xml
 ├── deployment/
 │   └── docker-compose/
-│       ├── infra.yml             # Local infrastructure (PostgreSQL x2, RabbitMQ)
-│       └── apps.yml              # Application services (catalog-service, order-service)
-├── docs/
-│   └── outbox-pattern.md         # Documentation on the Outbox Pattern implementation
-├── pom.xml                       # Parent POM (multi-module)
+│       ├── infra.yml                 # Local infrastructure (PostgreSQL x3, RabbitMQ, MailHog)
+│       └── apps.yml                  # Application services (all 3 microservices)
+├── pom.xml                           # Parent POM (multi-module)
 └── README.md
 ```
 
@@ -225,8 +261,11 @@ bookstore-microservice-app/
 ### Outbox Pattern
 Order events (created, delivered, cancelled, error) are first written to an `order_events` table within the same transaction as the order. A separate scheduled job (`OrderEventsPublishingJob`) then picks them up and publishes them to RabbitMQ. This guarantees no events are lost even if RabbitMQ is temporarily unavailable.
 
+### Idempotent Consumer
+The notification-service stores the `eventId` of every processed event in its own `order_events` table. Before processing any incoming message, it checks for a duplicate `eventId` and skips it if already handled. This prevents duplicate emails in case RabbitMQ redelivers a message.
+
 ### ShedLock for Distributed Scheduling
 Both scheduled jobs (`OrderEventsPublishingJob` and `OrderProcessingJob`) are protected with ShedLock. This ensures that in a multi-instance deployment, only one instance executes the job at a time, preventing duplicate event publishing or duplicate order processing.
 
 ### Resilience4j for Inter-Service Communication
-The `order-service` communicates with `catalog-service` via HTTP to validate products at order creation time. Resilience4j provides **retry** (2 attempts, 300ms wait) and **circuit breaker** (COUNT_BASED, 50% failure threshold) to handle catalog-service downtime gracefully, with a fallback returning an empty result.
+The `order-service` communicates with `catalog-service` via HTTP to

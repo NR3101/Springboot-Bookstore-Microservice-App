@@ -3,6 +3,7 @@ package com.neeraj.notificationservice.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neeraj.notificationservice.ApplicationProperties;
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -75,5 +76,17 @@ public class RabbitMQConfig {
     @Bean
     public Jackson2JsonMessageConverter jacksonConverter(ObjectMapper objectMapper) {
         return new Jackson2JsonMessageConverter(objectMapper);
+    }
+
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory, ObjectMapper objectMapper) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(jacksonConverter(objectMapper));
+        // Do NOT requeue a message if the listener throws an exception.
+        // Without this, a failed message is requeued and retried infinitely.
+        factory.setDefaultRequeueRejected(false);
+        return factory;
     }
 }
