@@ -1,6 +1,7 @@
 package com.neeraj.orderservice.domain;
 
 import com.neeraj.orderservice.domain.models.CreateOrderRequest;
+import com.neeraj.orderservice.domain.models.OrderDTO;
 import com.neeraj.orderservice.domain.models.OrderItem;
 import com.neeraj.orderservice.domain.models.OrderStatus;
 import java.util.Set;
@@ -33,5 +34,21 @@ public class OrderMapper {
                 .quantity(item.quantity())
                 .price(item.price())
                 .build();
+    }
+
+    public static OrderDTO toOrderDTO(OrderEntity orderEntity) {
+        Set<OrderItem> orderItems = orderEntity.getOrderItems().stream()
+                .map(item -> new OrderItem(item.getCode(), item.getName(), item.getQuantity(), item.getPrice()))
+                .collect(Collectors.toSet());
+
+        return new OrderDTO(
+                orderEntity.getOrderNumber(),
+                orderEntity.getUserName(),
+                orderItems,
+                orderEntity.getCustomer(),
+                orderEntity.getDeliveryAddress(),
+                orderEntity.getStatus(),
+                orderEntity.getComments(),
+                orderEntity.getCreatedAt());
     }
 }

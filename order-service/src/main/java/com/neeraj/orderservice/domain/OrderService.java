@@ -1,11 +1,9 @@
 package com.neeraj.orderservice.domain;
 
-import com.neeraj.orderservice.domain.models.CreateOrderRequest;
-import com.neeraj.orderservice.domain.models.CreateOrderResponse;
-import com.neeraj.orderservice.domain.models.OrderCreatedEvent;
-import com.neeraj.orderservice.domain.models.OrderStatus;
+import com.neeraj.orderservice.domain.models.*;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -68,5 +66,15 @@ public class OrderService {
     private boolean canBeDelivered(OrderEntity order) {
         String location = order.getDeliveryAddress().country().toUpperCase();
         return DELIVERABLE_LOCATIONS.contains(location);
+    }
+
+    public List<OrderSummary> getOrdersForUser(String userName) {
+        return orderRepository.findByUserName(userName);
+    }
+
+    public Optional<OrderDTO> getOrderForUser(String userName, String orderNumber) {
+        return orderRepository
+                .findByUserNameAndOrderNumber(userName, orderNumber)
+                .map(OrderMapper::toOrderDTO);
     }
 }
