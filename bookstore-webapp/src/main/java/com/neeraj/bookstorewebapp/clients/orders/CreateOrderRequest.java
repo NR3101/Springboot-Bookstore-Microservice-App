@@ -1,0 +1,10 @@
+package com.neeraj.bookstorewebapp.clients.orders;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import java.util.Set;
+
+public record CreateOrderRequest(
+        @NotEmpty(message = "Items are required") Set<OrderItem> items,
+        @Valid Customer customer,
+        @Valid Address deliveryAddress) {}

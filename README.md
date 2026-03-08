@@ -14,6 +14,7 @@ A Spring Boot-based microservice application for managing a bookstore, built wit
 | `catalog-service`      | 8081 | Manages book catalog and inventory                                       | Done   |
 | `order-service`        | 8082 | Handles order creation, processing, and events                           | Done   |
 | `notification-service` | 8083 | Sends email notifications for order lifecycle events                     | Done   |
+| `bookstore-webapp`     | 8080 | Server-side rendered web frontend (Thymeleaf + Alpine.js)                | Done   |
 
 ---
 
@@ -47,6 +48,15 @@ A Spring Boot-based microservice application for managing a bookstore, built wit
 ### Notifications
 - **Spring Mail** – Email sending via JavaMailSender
 - **MailHog** – Local SMTP server for capturing and inspecting emails during development
+
+### Web Frontend (`bookstore-webapp`)
+- **Thymeleaf** + **Thymeleaf Layout Dialect** – Server-side HTML templating
+- **Thymeleaf Extras Spring Security 6** – Security-aware Thymeleaf expressions (`sec:authorize`)
+- **Alpine.js** (via WebJar) – Lightweight reactive JS for dynamic UI
+- **Bootstrap 5** (via WebJar) – CSS/component framework
+- **jQuery** (via WebJar) – AJAX calls (`$.getJSON`, `$.ajax`)
+- **Font Awesome** (via WebJar) – Icons
+- **Spring HTTP Interface** (`@GetExchange`, `@PostExchange`) – Declarative HTTP clients (`CatalogServiceClient`, `OrderServiceClient`) for server-side calls to the API gateway
 
 ### Testing
 - **Testcontainers** – Integration testing with real PostgreSQL and RabbitMQ containers
@@ -105,10 +115,14 @@ cd order-service && ./mvnw spring-boot:run
 
 # Notification Service
 cd notification-service && ./mvnw spring-boot:run
+
+# Bookstore Web App
+cd bookstore-webapp && ./mvnw spring-boot:run
 ```
 
 | Service                | URL                          |
 |------------------------|------------------------------|
+| `bookstore-webapp`     | `http://localhost:8080`      |
 | `api-gateway`          | `http://localhost:8989`      |
 | `catalog-service`      | `http://localhost:8081`      |
 | `order-service`        | `http://localhost:8082`      |
@@ -120,14 +134,27 @@ cd notification-service && ./mvnw spring-boot:run
 
 ## API Gateway Routes
 
-All services can be accessed through the API Gateway on port `8989`:
+All backend services can also be accessed through the API Gateway on port `8989`:
 
-| Route prefix | Forwards to          | Example                                        |
-|--------------|----------------------|------------------------------------------------|
-| `/catalog/**` | `catalog-service`   | `GET http://localhost:8989/catalog/api/products` |
-| `/orders/**`  | `order-service`     | `POST http://localhost:8989/orders/api/orders`   |
+| Route prefix   | Forwards to        | Example                                          |
+|----------------|--------------------|--------------------------------------------------|
+| `/catalog/**`  | `catalog-service`  | `GET http://localhost:8989/catalog/api/products` |
+| `/orders/**`   | `order-service`    | `POST http://localhost:8989/orders/api/orders`   |
 
 The gateway also aggregates OpenAPI docs from all registered services.
+
+---
+
+## Web Frontend Pages
+
+The `bookstore-webapp` provides the following pages:
+
+| Page             | URL                        | Description                                      |
+|------------------|----------------------------|--------------------------------------------------|
+| Products listing | `http://localhost:8080/`   | Browse paginated product catalog, add to cart    |
+| Cart             | `http://localhost:8080/cart` | Review cart, fill in customer & address, place order |
+| Orders           | `http://localhost:8080/orders` | View all orders for the logged-in user         |
+| Order details    | `http://localhost:8080/orders/{orderNumber}` | Full details of a single order   |
 
 ---
 
@@ -145,6 +172,12 @@ The gateway also aggregates OpenAPI docs from all registered services.
 ## Configuration
 
 Services use environment variables with sensible defaults for local development.
+
+### bookstore-webapp
+
+| Variable          | Default                   | Description                        |
+|-------------------|---------------------------|------------------------------------|
+| `API_GATEWAY_URL` | `http://localhost:8989`   | API gateway base URL for server-side HTTP client calls |
 
 ### api-gateway
 
@@ -195,6 +228,7 @@ Services use environment variables with sensible defaults for local development.
 
 | Service                | Health                                  | Info                                  |
 |------------------------|-----------------------------------------|---------------------------------------|
+| `bookstore-webapp`     | `GET localhost:8080/actuator/health`    | `GET localhost:8080/actuator/info`    |
 | `api-gateway`          | `GET localhost:8989/actuator/health`    | `GET localhost:8989/actuator/info`    |
 | `catalog-service`      | `GET localhost:8081/actuator/health`    | `GET localhost:8081/actuator/info`    |
 | `order-service`        | `GET localhost:8082/actuator/health`    | `GET localhost:8082/actuator/info`    |
@@ -236,6 +270,7 @@ Each service has its own GitHub Actions workflow that triggers on pushes to `mai
 
 | Workflow               | Trigger Path              | Actions                                    |
 |------------------------|---------------------------|--------------------------------------------|
+| `bookstore-webapp`     | `bookstore-webapp/**`     | Build → Test → Build & Push Docker Image   |
 | `api-gateway`          | `api-gateway/**`          | Build → Test → Build & Push Docker Image   |
 | `catalog-service`      | `catalog-service/**`      | Build → Test → Build & Push Docker Image   |
 | `order-service`        | `order-service/**`        | Build → Test → Build & Push Docker Image   |
@@ -253,14 +288,28 @@ Required GitHub Secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
 bookstore-microservice-app/
 ├── .github/
 │   └── workflows/
+│       ├── bookstore-webapp.yml      # CI/CD for bookstore-webapp
 │       ├── api-gateway.yml           # CI/CD for api-gateway
 │       ├── catalog-service.yml       # CI/CD for catalog-service
 │       ├── order-service.yml         # CI/CD for order-service
 │       └── notification-service.yml  # CI/CD for notification-service
-├── api-gateway/                      # Spring Cloud Gateway — single entry point
+├── bookstore-webapp/                 # Thymeleaf + Alpine.js web frontend
 │   ├── src/
-│   │   ├── main/resources/           # application.yml with route definitions
-│   │   └── test/java/                # Context load tests
+│   │   ├── main/java/
+│   │   │   ├── clients/
+│   │   │   │   ├── catalog/          # CatalogServiceClient (Spring HTTP Interface)
+│   │   │   │   └── orders/           # OrderServiceClient (Spring HTTP Interface) + DTOs
+│   │   │   ├── config/               # ClientsConfig — registers HTTP client beans
+│   │   │   └── web/controllers/      # ProductController, OrderController, CartController
+│   │   └── main/resources/
+│   │       ├── static/
+│   │       │   ├── css/              # styles.css
+│   │       │   ├── images/           # books.png
+│   │       │   └── js/               # products.js, cart.js, cartStore.js, orders.js, orderDetails.js
+│   │       └── templates/            # Thymeleaf templates (layout, products, cart, orders, order_details)
+│   └── pom.xml
+├── api-gateway/                      # Spring Cloud Gateway — single entry point
+│   ├── src/main/resources/           # application.yml with route definitions
 │   └── pom.xml
 ├── catalog-service/                  # Book catalog microservice
 │   ├── src/
@@ -290,7 +339,7 @@ bookstore-microservice-app/
 ├── deployment/
 │   └── docker-compose/
 │       ├── infra.yml                 # Local infrastructure (PostgreSQL x3, RabbitMQ, MailHog)
-│       └── apps.yml                  # Application services (all microservices)
+│       └── apps.yml                  # Application services (all 5 microservices)
 ├── pom.xml                           # Parent POM (multi-module)
 └── README.md
 ```
@@ -298,6 +347,11 @@ bookstore-microservice-app/
 ---
 
 ## Key Design Decisions
+
+### Bookstore Web App
+The `bookstore-webapp` is a server-side rendered frontend using Thymeleaf templates decorated with a shared `layout.html`. Dynamic behaviour (pagination, cart, order forms) is handled client-side with Alpine.js and jQuery AJAX calls — all targeting the webapp's own backend endpoints (`/api/products`, `/api/orders`), never the API gateway directly (avoiding CORS). The webapp makes server-side HTTP calls to the API gateway via Spring's declarative HTTP Interface clients (`CatalogServiceClient`, `OrderServiceClient`), with a shared `RestClientCustomizer` bean that sets the base URL and configures connect/read timeouts (5s each).
+
+Alpine.js scripts are registered with `Alpine.data()` inside `alpine:init` event listeners. To guarantee these registrations happen before Alpine initialises, all page scripts are loaded **before** the Alpine CDN script tag.
 
 ### API Gateway
 The `api-gateway` module uses Spring Cloud Gateway (WebFlux) as the single entry point for all client requests. It routes `/catalog/**` to the catalog-service and `/orders/**` to the order-service, stripping the prefix with a `RewritePath` filter. Global CORS configuration is applied at the gateway level. SpringDoc OpenAPI WebFlux UI is configured to aggregate API docs from all downstream services.

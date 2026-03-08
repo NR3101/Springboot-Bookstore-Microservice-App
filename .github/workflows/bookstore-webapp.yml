@@ -1,9 +1,9 @@
-name: Catalog Service
+name: Bookstore Webapp
 
 on:
   push:
     paths:
-      - catalog-service/**
+      - bookstore-webapp/**
     branches:
       - 'main'
   pull_request:
@@ -14,8 +14,8 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     env:
-      working-directory: ./catalog-service
-      DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/bookstore-catalog-service
+      working-directory: ./bookstore-webapp
+      DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/bookstore-webapp
     defaults:
       run:
         working-directory: ${{ env.working-directory }}

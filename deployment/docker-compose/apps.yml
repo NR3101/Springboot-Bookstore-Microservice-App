@@ -88,3 +88,20 @@ services:
       resources:
         limits:
           memory: 700M
+
+  bookstore-webapp:
+    image: neeraj310100/bookstore-webapp
+    container_name: bookstore-webapp
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - API_GATEWAY_URL=http://api-gateway:8989
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      api-gateway:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 700M

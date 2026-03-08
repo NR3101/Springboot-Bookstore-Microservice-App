@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: bookstore-webapp
+
+server:
+  port: 8080
+
+bookstore:
+  api-gateway-url: ${API_GATEWAY_URL:http://localhost:8989}
+
