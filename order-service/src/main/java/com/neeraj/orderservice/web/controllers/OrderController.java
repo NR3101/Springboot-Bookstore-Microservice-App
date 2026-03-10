@@ -7,6 +7,7 @@ import com.neeraj.orderservice.domain.models.CreateOrderRequest;
 import com.neeraj.orderservice.domain.models.CreateOrderResponse;
 import com.neeraj.orderservice.domain.models.OrderDTO;
 import com.neeraj.orderservice.domain.models.OrderSummary;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "security_auth")
 public class OrderController {
 
     private final OrderService orderService;

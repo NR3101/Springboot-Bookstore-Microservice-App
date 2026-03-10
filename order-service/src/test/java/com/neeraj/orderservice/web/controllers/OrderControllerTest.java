@@ -66,6 +66,7 @@ class OrderControllerTest extends AbstractIT {
                             """;
 
             given().contentType(ContentType.JSON)
+                    .header("Authorization", "Bearer " + getToken())
                     .body(payload)
                     .when()
                     .post("/api/orders")
@@ -78,6 +79,7 @@ class OrderControllerTest extends AbstractIT {
         void shouldReturnBadRequestWhenMandatoryDataIsMissing() {
             var payload = TestDataFactory.createOrderRequestWithInvalidCustomer();
             given().contentType(ContentType.JSON)
+                    .header("Authorization", "Bearer " + getToken())
                     .body(payload)
                     .when()
                     .post("/api/orders")
@@ -91,7 +93,9 @@ class OrderControllerTest extends AbstractIT {
 
         @Test
         void shouldGetOrdersSuccessfully() {
-            List<OrderSummary> orders = given().when()
+            // Fetch order summaries using the test JWT token
+            List<OrderSummary> orders = given().header("Authorization", "Bearer " + getToken())
+                    .when()
                     .get("/api/orders")
                     .then()
                     .statusCode(HttpStatus.OK.value())
@@ -110,7 +114,8 @@ class OrderControllerTest extends AbstractIT {
 
         @Test
         void shouldGetOrderByOrderNumberSuccessfully() {
-            given().when()
+            given().header("Authorization", "Bearer " + getToken())
+                    .when()
                     .get("/api/orders/{orderNumber}", orderNumber)
                     .then()
                     .statusCode(HttpStatus.OK.value())
@@ -120,7 +125,8 @@ class OrderControllerTest extends AbstractIT {
 
         @Test
         void shouldReturnNotFoundForNonExistingOrder() {
-            given().when()
+            given().header("Authorization", "Bearer " + getToken())
+                    .when()
                     .get("/api/orders/{orderNumber}", "NON_EXISTING_ORDER")
                     .then()
                     .statusCode(HttpStatus.NOT_FOUND.value());
