@@ -25,6 +25,22 @@ bookstore:
   api-gateway-url: ${API_GATEWAY_URL:http://localhost:8989}
 
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  info:
+    git:
+      mode: full
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    enabled: false
+    sampling:
+      probability: 1.0
+
 # OAuth2 server configuration
 OAUTH2_SERVER_URL: http://localhost:9191
 REALM_URL: ${OAUTH2_SERVER_URL}/realms/bookstore

@@ -63,5 +63,11 @@ management:
   info:
     git:
       mode: full
-
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    enabled: false
+    sampling:
+      probability: 1.0
 

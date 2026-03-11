@@ -18,6 +18,17 @@ management:
   info:
     git:
       mode: full
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    enabled: false
+    sampling:
+      probability: 1.0
+
+# Swagger configuration
+swagger:
+  api-gateway-url: http://localhost:8989/catalog
 
 catalog:
   page-size: 10

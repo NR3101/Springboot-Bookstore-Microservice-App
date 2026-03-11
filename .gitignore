@@ -114,5 +114,6 @@ docker-compose.local.yml
 # Misc
 # ========================
 HELP.md
+AGENTS.md
 *.orig
 *.rej
